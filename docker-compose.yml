@@ -1,0 +1,106 @@
+version: '3'
+
+services:
+
+  db-1:
+    env_file:
+      - db.env
+    image: mysql/mysql-server
+    container_name: db-1
+    ports:
+      - "3301:3306"
+    command: [
+              "mysqld"
+              ,"--server_id=1"
+              ,"--binlog_checksum=NONE"
+              ,"--binlog_format=row"
+              ,"--gtid_mode=ON"
+              ,"--enforce_gtid_consistency=ON"
+              ,"--log_bin"
+              ,"--log_slave_updates=ON"
+              ,"--master_info_repository=TABLE"
+              ,"--relay_log_info_repository=TABLE"
+              ,"--transaction_write_set_extraction=XXHASH64"
+              ,"--user=admin"
+              ,"--skip-host-cache"
+              ,"--skip-name-resolve"
+              ,"--default_authentication_plugin=mysql_native_password"
+            ]
+
+  db-2:
+    env_file:
+      - db.env
+    image: mysql/mysql-server
+    container_name: db-2
+    command: [
+              "mysqld"
+              ,"--server_id=2"
+              ,"--binlog_checksum=NONE"
+              ,"--binlog_format=row"
+              ,"--gtid_mode=ON"
+              ,"--enforce_gtid_consistency=ON"
+              ,"--log_bin"
+              ,"--log_slave_updates=ON"
+              ,"--master_info_repository=TABLE"
+              ,"--relay_log_info_repository=TABLE"
+              ,"--transaction_write_set_extraction=XXHASH64"
+              ,"--user=admin"
+              ,"--skip-host-cache"
+              ,"--skip-name-resolve"
+              ,"--default_authentication_plugin=mysql_native_password"
+            ]
+    ports:
+      - "3302:3306"
+
+  db-3:
+    env_file:
+      - db.env
+    image: mysql/mysql-server
+    container_name: db-3
+    command: [
+              "mysqld"
+              ,"--server_id=3"
+              ,"--binlog_checksum=NONE"
+              ,"--binlog_format=row"
+              ,"--gtid_mode=ON"
+              ,"--enforce_gtid_consistency=ON"
+              ,"--log_bin"
+              ,"--log_slave_updates=ON"
+              ,"--master_info_repository=TABLE"
+              ,"--relay_log_info_repository=TABLE"
+              ,"--transaction_write_set_extraction=XXHASH64"
+              ,"--user=admin"
+              ,"--skip-host-cache"
+              ,"--skip-name-resolve"
+              ,"--default_authentication_plugin=mysql_native_password"
+            ]
+    ports:
+      - "3303:3306"
+
+  shell:
+    env_file:
+      - ./shell/shell.env
+    build:
+      context: shell
+      dockerfile: Dockerfile
+    container_name: shell
+    volumes:
+        - ./shell/:/scripts/
+    depends_on:
+      - db-1
+      - db-2
+      - db-3
+
+  router:
+    env_file:
+      - router.env
+    image: mysql/mysql-router
+    container_name: router
+    ports:
+      - "6446:6446"
+    depends_on:
+      - db-1
+      - db-2
+      - db-3
+      - shell
+    restart: on-failure
